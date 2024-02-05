@@ -713,6 +713,8 @@ Based on https://www.ibm.com/docs/en/filenet-p8-platform/5.5.12?topic=using-cont
 
 Based on https://www.ibm.com/docs/en/filenet-p8-platform/5.5.12?topic=cluster-preparing-client-connect
 
+CASE packages repository https://github.com/IBM/cloud-pak/tree/master/repo/case/ibm-cp-fncm-case
+
 ```bash
 # Create directory for fncm
 mkdir /usr/install/fncm
@@ -763,7 +765,7 @@ Select the cloud platform to deploy:
 1) RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud
 2) Openshift Container Platform (OCP) - Private Cloud
 3) Other (Certified Kubernetes Cloud Platform / CNCF)
-Enter a valid option [1 to 3]: 2 #based on your platform
+Enter a valid option [1 to 3]: 2 # Based on your platform
 
 This script prepares the environment for the deployment of some FileNet Content Management capabilities 
 
@@ -895,7 +897,7 @@ Select a License Type
 1. ICF
 2. FNCM
 3. CP4BA
-Enter a valid option [1 and 3]: 3 #based on yor license
+Enter a valid option [1 and 3]: 3 # Based on yor license
 
 Select a License Metric
 1. NonProd
@@ -911,7 +913,7 @@ Select a Platform Type
 1. OCP
 2. ROKS
 3. CNCF
-Enter a valid option [1 and 3]: 1 #based on your platform
+Enter a valid option [1 and 3]: 1 # Based on your platform
 
 ╭─────────────────────╮
 │ Authentication Type │
@@ -954,7 +956,7 @@ Enter [0] to finish selection
 4. CSS ✔
 5. CMIS ✔
 6. Task Manager ✔
-Enter a valid option [1 and 6]: 0
+Enter a valid option [1 and 6]: 4, 5, 6 and then 0
 
 ╭───────────────────╮
 │ Component Options │
@@ -1125,7 +1127,8 @@ sed -i \
 -e '0,/DATABASE_NAME = "<Required>"/s//DATABASE_NAME = "devicn"/' \
 -e '0,/DATABASE_USERNAME = """<Required>"""/s//DATABASE_USERNAME = """devicn"""/' \
 -e '0,/DATABASE_PASSWORD = """<Required>"""/s//DATABASE_PASSWORD = """Password"""/' \
--e '0,/TABLESPACE_NAME = "ICNDB"/s//TABLESPACE_NAME = "devicn"/' \
+-e '0,/TABLESPACE_NAME = "ICNDB"/s//TABLESPACE_NAME = "devicn_tbs"/' \
+-e '0,/SCHEMA_NAME = "ICNDB"/s//SCHEMA_NAME = "devicn"/' \
 /usr/install/fncm/ibm-cp-fncm-case/inventory/\
 fncmOperator/files/deploy/crs/container-samples/scripts/\
 prerequisites/propertyFile/fncm_db_server.toml
@@ -1211,7 +1214,8 @@ sed -i \
 -e 's/ICN_LOGIN_PASSWORD = """<Required>"""/ICN_LOGIN_PASSWORD = """Password"""/g' \
 -e 's/GCD_ADMIN_USER_NAME = \["""<Required>"""\]/GCD_ADMIN_USER_NAME = \["""cpadmin"""\]/g' \
 -e 's/GCD_ADMIN_GROUPS_NAME = \["""<Required>"""\]/GCD_ADMIN_GROUPS_NAME = \["""cpadmins"""\]/g' \
--e 's/CPE_OBJ_STORE_OS_ADMIN_USER_GROUPS = \["""<Required>"""\]/CPE_OBJ_STORE_OS_ADMIN_USER_GROUPS = \["""cpadmins"""\]/g' \
+-e 's/CPE_OBJ_STORE_OS_ADMIN_USER_GROUPS = \["""<Required>"""\]/'\
+'CPE_OBJ_STORE_OS_ADMIN_USER_GROUPS = \["""cpadmin""","""cpadmins"""\]/g' \
 /usr/install/fncm/ibm-cp-fncm-case/inventory/\
 fncmOperator/files/deploy/crs/container-samples/scripts/\
 prerequisites/propertyFile/fncm_user_group.toml
@@ -1253,6 +1257,17 @@ python3 prerequisites.py generate
 ```
 
 #### Apply SQLs to DB instance
+
+Update ICN tablespace and schema names (TODO needed on 2024-02-05 for FNCM 5.5.12 for CASE package 1.8.0)
+```bash
+sed -i \
+-e 's/tablespace ICNDB/tablespace devicn_tbs/g' \
+-e 's/SCHEMA IF NOT EXISTS ICNDB/SCHEMA IF NOT EXISTS devicn/g' \
+-e 's/search_path TO ICNDB/search_path TO devicn/g' \
+/usr/install/fncm/ibm-cp-fncm-case/inventory/\
+fncmOperator/files/deploy/crs/container-samples/scripts/\
+prerequisites/generatedFiles/database/createICN.sql
+```
 
 Copy create scripts to PostgreSQL instance
 ```bash
@@ -1301,10 +1316,8 @@ prerequisites/generatedFiles/ibm_fncm_cr_production.yaml.bak
 ```bash
 # Change LDAP type
 sed -i \
--e 's/lc_selected_ldap_type: IBM Security Directory Server/'\
-'lc_selected_ldap_type: Custom/g' \
--e 's/tds:/'\
-'custom:/g' \
+-e 's/lc_selected_ldap_type: IBM Security Directory Server/lc_selected_ldap_type: Custom/g' \
+-e 's/tds:/custom:/g' \
 /usr/install/fncm/ibm-cp-fncm-case/inventory/\
 fncmOperator/files/deploy/crs/container-samples/scripts/\
 prerequisites/generatedFiles/ibm_fncm_cr_production.yaml
@@ -1546,19 +1559,103 @@ oc get -n fncm FNCMCluster fncmdeploy -o jsonpath='{.status.components}' | jq
 ```
 
 ```json
-  conditions:
-    - message: Running reconciliation
-      reason: Running
-      status: 'True'
-      type: Running
-    - message: Prerequisites execution done.
-      reason: Successful
-      status: 'True'
-      type: PrereqReady
-    - message: ''
-      reason: Successful
-      status: 'True'
-      type: Ready
+{
+  "ban_initialization": {
+    "banAddDefaultDesktop": "Ready",
+    "banAddDefaultPlugins": "Ready",
+    "banAddRepository": "Ready"
+  },
+  "ban_verification": {
+    "banCreateFolder": "Ready",
+    "banDeleteDoc": "Ready",
+    "banDeleteFolder": "Ready",
+    "conditions": {
+      "lastTransitionTime": "2024-02-05T14:36:48Z",
+      "message": "",
+      "reason": "",
+      "type": ""
+    }
+  },
+  "cmis": {
+    "cmisDeployment": "NotReady",
+    "cmisRoute": "NotReady",
+    "cmisService": "NotReady",
+    "cmisStorage": "NotReady",
+    "lastTransitionTime": "2024-02-05T15:36:27Z",
+    "message": "",
+    "reason": ""
+  },
+  "content_initialization": {
+    "cpeDomainInitialization": "Ready",
+    "cpeObjectStoreInitializationObjectstoreName": "Ready",
+    "cssIndexCreation": "Ready"
+  },
+  "content_verification": {
+    "cmisVerification": "Ready",
+    "conditions": {
+      "lastTransitionTime": "2024-02-05T15:19:01Z",
+      "message": "Verification Done",
+      "reason": "Successful",
+      "status": "True",
+      "type": "Ready"
+    },
+    "cpeVerification": "Ready",
+    "cssIndexVerification": "Ready"
+  },
+  "cpe": {
+    "cpeDeployment": "Ready",
+    "cpeJDBCDriver": "Ready",
+    "cpeRoute": "Ready",
+    "cpeService": "Ready",
+    "cpeStorage": "Ready",
+    "lastTransitionTime": "2024-02-05T15:36:27Z",
+    "message": "",
+    "reason": ""
+  },
+  "css": {
+    "cssDeployment": "Ready",
+    "cssService": "Ready",
+    "cssStorage": "Ready",
+    "lastTransitionTime": "2024-02-05T15:36:27Z",
+    "message": "",
+    "reason": ""
+  },
+  "extshare": {
+    "extshareDeployment": "NotInstalled",
+    "extshareRoute": "NotInstalled",
+    "extshareService": "NotInstalled",
+    "extshareStorage": "NotInstalled",
+    "lastTransitionTime": "2024-02-05T15:19:01Z",
+    "message": "",
+    "reason": ""
+  },
+  "graphql": {
+    "graphqlDeployment": "Ready",
+    "graphqlRoute": "Ready",
+    "graphqlService": "Ready",
+    "graphqlStorage": "Ready",
+    "lastTransitionTime": "2024-02-05T15:19:01Z",
+    "message": "",
+    "reason": ""
+  },
+  "navigator": {
+    "lastTransitionTime": "2024-02-05T15:19:01Z",
+    "message": "",
+    "navigatorDeployment": "Ready",
+    "navigatorService": "Ready",
+    "navigatorStorage": "Ready",
+    "reason": ""
+  },
+  "tm": {
+    "lastTransitionTime": "2024-02-05T15:19:01Z",
+    "message": "",
+    "reason": "",
+    "tmDeployment": "Ready",
+    "tmRoute": "Ready",
+    "tmService": "Ready",
+    "tmStorage": "Ready"
+  }
+}
 ```
 
 ### License Metering
