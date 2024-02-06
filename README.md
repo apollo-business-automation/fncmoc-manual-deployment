@@ -62,14 +62,13 @@ and additional utilities for script execution
 
 Requested tooling provided in the install Pod.
 
-- podman
 - kubectl
+- oc
+- podman
 - IBM Semeru JDK 17
 - python 3.9 - should be 3.8 but it is not available in the UBI image repo
-- oc
 - yq
 - jq
-- git
 
 ### Creating an install client directly in OCP
 
@@ -139,14 +138,13 @@ spec:
     - name: install
       securityContext:
         privileged: true
-      image: ubi9/ubi:9.1.0
+      image: ubi9/ubi:9.3
       command: ["/bin/bash"]
       args:
         ["-c","cd /usr;
           yum install podman -y;
           yum install ncurses -y;
           yum install jq -y;
-          yum install git -y;
           yum install python3.9 -y;
           yum install python3.9-pip -y;
           curl -LO https://github.com/ibmruntimes/semeru17-binaries/releases/download/jdk-17.0.9%2B9_openj9-0.41.0/ibm-semeru-open-jdk_x64_linux_17.0.9_9_openj9-0.41.0.tar.gz;
@@ -170,7 +168,6 @@ spec:
           kubectl version;
           yq --version;
           jq --version;
-          git --version;
           python3 --version;
           pip3 --version;
           while true;
