@@ -1320,7 +1320,7 @@ fncmOperator/files/deploy/crs/container-samples/scripts/\
 prerequisites/generatedFiles/ibm_fncm_cr_production.yaml
 ```
 
-Add permissive network policy to enable the deployment to reach to LDAP and DB
+Add permissive network policy to enable the deployment to reach to LDAP and DB (TODO needed on 2024-02-05 for FNCM 5.5.12 for CASE package 1.8.0)
 ```bash
 echo "
 kind: NetworkPolicy
