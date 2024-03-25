@@ -1320,13 +1320,13 @@ fncmOperator/files/deploy/crs/container-samples/scripts/\
 prerequisites/generatedFiles/ibm_fncm_cr_production.yaml
 ```
 
-Add permissive network policy to enable the deployment to reach to LDAP and DB (TODO needed on 2024-02-05 for FNCM 5.5.12 for CASE package 1.8.0)
+Add permissive network policy to enable anything from wfps-dev namespace to reach to anything (TODO needed on 2024-02-05 for FNCM 5.5.12 for CASE package 1.8.0)
 ```bash
 echo "
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: custom-permit-db-egress
+  name: custom-permit-all-egress
   namespace: fncm
 spec:
   podSelector: {}
@@ -1334,27 +1334,9 @@ spec:
     - Egress
   egress:
     - to:
-        - podSelector: {}
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: fncm-postgresql
-" | oc apply -f -
-echo "
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: custom-permit-ldap-egress
-  namespace: fncm
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector: {}
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: fncm-openldap
+        - ipBlock:
+            cidr: '10.2.1.0/0'
+            except: []
 " | oc apply -f -
 ```
 
