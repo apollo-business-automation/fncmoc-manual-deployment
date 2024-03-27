@@ -72,7 +72,7 @@ Requested tooling provided in the install Pod.
 
 ### Creating an install client directly in OCP
 
-In you OCP cluster create Project *fncm-install* using OpenShift console.
+In your OCP cluster create Project *fncm-install* using OpenShift console.
 ```yaml
 kind: Project
 apiVersion: project.openshift.io/v1
